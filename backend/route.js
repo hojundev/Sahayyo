@@ -67,7 +67,7 @@ app.get('/api/get-route', async (req, res) => {
 
   try {
     // We force mode=transit. Google will automatically include the walking steps to/from the bus stops!
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originLat},${originLng}&destination=${destLat},${destLng}&mode=transit&key=${GOOGLE_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originLat},${originLng}&destination=${destLat},${destLng}&mode=transit&key=${GOOGLE_MAPS_API_KEY}`;
     
     const response = await axios.get(url);
     const data = response.data;

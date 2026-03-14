@@ -14,17 +14,24 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* ── helpers ── */
 function stripHtml(str) {
-  return str.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  return str.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function routeImageForManeuver(maneuver = "") {
+function maneuverMeta(maneuver = "") {
   const m = maneuver.toLowerCase();
-  if (m.includes("turn-right"))  return "turn_right.png";
-  if (m.includes("turn-left"))   return "turn_left.png";
-  if (m.includes("roundabout"))  return "roundabout.png";
-  if (m.includes("straight"))    return "straight.png";
-  if (m.includes("arrive"))      return "arrive.png";
-  return "walk_straight.png";
+  if (m.includes("turn-right"))  return { image: "turn_right.png",   emoji: "➡️",  label: "Turn Right" };
+  if (m.includes("turn-left"))   return { image: "turn_left.png",    emoji: "⬅️",  label: "Turn Left" };
+  if (m.includes("roundabout"))  return { image: "roundabout.png",   emoji: "🔄",  label: "Roundabout" };
+  if (m.includes("straight"))    return { image: "straight.png",     emoji: "⬆️",  label: "Go Straight" };
+  if (m.includes("arrive"))      return { image: "arrive.png",       emoji: "📍",  label: "Arrive" };
+  return                                { image: "walk_straight.png", emoji: "⬆️",  label: "Continue" };
+}
+
+/* parse distance string like "47 m" or "0.2 km" into metres */
+function toMetres(distText = "") {
+  if (!distText) return Infinity;
+  const n = parseFloat(distText);
+  return distText.includes("km") ? n * 1000 : n;
 }
 
 function routeAudioForIndex(i) {
@@ -85,15 +92,26 @@ app.get("/api/nearest-grocery", async (req, res) => {
     const legs = dirRes.data.routes?.[0]?.legs?.[0];
     const steps = legs?.steps || [];
 
-    const route = steps.map((s, i) => ({
-      step: i + 1,
-      instruction:    stripHtml(s.html_instructions),
-      rohingya_text:  stripHtml(s.html_instructions),   // replace with real Rohingya translation
-      distance:       s.distance?.text,
-      duration:       s.duration?.text,
-      image:          `/public/images/${routeImageForManeuver(s.maneuver)}`,
-      audio:          `/public/audio/${routeAudioForIndex(i)}`
-    }));
+    const MIN_STEP_METRES = 20;
+    const keySteps = steps.filter((s, i) => {
+      const isLast = i === steps.length - 1;
+      return isLast || toMetres(s.distance?.text) >= MIN_STEP_METRES;
+    });
+
+    const route = keySteps.map((s, i) => {
+      const meta = maneuverMeta(s.maneuver);
+      return {
+        step:          i + 1,
+        instruction:   stripHtml(s.html_instructions),
+        rohingya_text: stripHtml(s.html_instructions),
+        distance:      s.distance?.text,
+        duration:      s.duration?.text,
+        image:         `/public/images/${meta.image}`,
+        emoji:         meta.emoji,
+        label:         meta.label,
+        audio:         `/public/audio/${routeAudioForIndex(i)}`
+      };
+    });
 
     const store_steps = [
       { step:1, instruction:"Enter through the front door",  rohingya_text:"দোকানে ঢুকুন",      image:"/public/images/store_enter.png",   audio:"/public/audio/store_step1.mp3" },

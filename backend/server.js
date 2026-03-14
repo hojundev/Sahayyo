@@ -92,7 +92,7 @@ app.get("/api/nearest-grocery", async (req, res) => {
     const legs = dirRes.data.routes?.[0]?.legs?.[0];
     const steps = legs?.steps || [];
 
-    const MIN_STEP_METRES = 20;
+    const MIN_STEP_METRES = 30;
     const keySteps = steps.filter((s, i) => {
       const isLast = i === steps.length - 1;
       return isLast || toMetres(s.distance?.text) >= MIN_STEP_METRES;

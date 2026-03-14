@@ -266,13 +266,72 @@ app.get("/api/find-place", async (req, res) => {
 
     const route = buildSteps(legs?.steps || []);
 
-    const store_steps = [
-      { step: 1, instruction: "Enter through the front door", rohingya_text: "দোকানে ঢুকুন", image: "/public/images/store_enter.png", audio: "/public/audio/store_step1.mp3" },
-      { step: 2, instruction: "Take a basket or cart", rohingya_text: "ঝুড়ি নিন", image: "/public/images/store_basket.png", audio: "/public/audio/store_step2.mp3" },
-      { step: 3, instruction: "Pick the items you need", rohingya_text: "জিনিস তুলুন", image: "/public/images/store_pick.png", audio: "/public/audio/store_step3.mp3" },
-      { step: 4, instruction: "Go to the cashier counter", rohingya_text: "কাউন্টারে যান", image: "/public/images/store_cashier.png", audio: "/public/audio/store_step4.mp3" },
-      { step: 5, instruction: "Pay and collect your bags", rohingya_text: "টাকা দিয়ে ব্যাগ নিন", image: "/public/images/store_pay.png", audio: "/public/audio/store_step5.mp3" },
-    ];
+    const INSIDE_STEPS = {
+      grocery_or_supermarket: [
+        { instruction: "Walk in — anyone can enter, no permission needed",         rohingya_text: "সবাই ঢুকতে পারে — অনুমতি লাগে না" },
+        { instruction: "Take a basket near the entrance, or push a cart",          rohingya_text: "প্রবেশদ্বারে ঝুড়ি বা ট্রলি নিন — এগুলো বিনামূল্যে ব্যবহার করা যায়" },
+        { instruction: "Check the shelf label for the price — not the item itself", rohingya_text: "দাম পণ্যে নয়, তাকের লেবেলে দেখুন" },
+        { instruction: "Look for a green Halal label if you need halal food",      rohingya_text: "হালাল খাবারের জন্য সবুজ হালাল লেবেল দেখুন" },
+        { instruction: "Place items on the belt at the cashier counter",           rohingya_text: "ক্যাশিয়ারের বেল্টে পণ্য রাখুন" },
+        { instruction: "Bag your own groceries — this is normal in Canada",        rohingya_text: "নিজে ব্যাগে ভরুন — এটাই কানাডার নিয়ম" },
+        { instruction: "Tap your card or pay cash — exact change not needed",      rohingya_text: "কার্ড ট্যাপ করুন বা নগদ দিন — খুচরা লাগবে না" },
+      ],
+      convenience_store: [
+        { instruction: "Walk in — no need to ask anyone",                          rohingya_text: "সরাসরি ঢুকুন — কাউকে জিজ্ঞেস করতে হবে না" },
+        { instruction: "Prices here are higher than a grocery store — that is normal", rohingya_text: "এখানে দাম একটু বেশি — এটা স্বাভাবিক" },
+        { instruction: "Bring your items to the counter",                          rohingya_text: "পণ্য কাউন্টারে নিয়ে যান" },
+        { instruction: "Tap your card or pay cash",                                rohingya_text: "কার্ড ট্যাপ করুন বা নগদ দিন" },
+      ],
+      restaurant: [
+        { instruction: "Wait at the door — a staff member will seat you",          rohingya_text: "দরজায় অপেক্ষা করুন — কর্মী আপনাকে বসাবে" },
+        { instruction: "You can point at menu pictures if you don't speak English", rohingya_text: "ইংরেজি না জানলে মেনুর ছবি দেখিয়ে অর্ডার করুন" },
+        { instruction: "Water is free — just ask",                                 rohingya_text: "পানি বিনামূল্যে — শুধু চাইতে হবে" },
+        { instruction: "Ask if the food is halal — you have the right to know",    rohingya_text: "খাবার হালাল কিনা জিজ্ঞেস করুন — জানার অধিকার আপনার আছে" },
+        { instruction: "Ask for the bill when you are done eating",                rohingya_text: "খাওয়া শেষে বিল চান" },
+        { instruction: "Add a 15% tip when paying — this is expected in Canada",   rohingya_text: "বিলের সাথে ১৫% টিপস দিন — কানাডায় এটা প্রচলিত" },
+      ],
+      cafe: [
+        { instruction: "Walk up to the counter and order",                         rohingya_text: "কাউন্টারে গিয়ে অর্ডার করুন" },
+        { instruction: "Point to items on the display if you are unsure",          rohingya_text: "নিশ্চিত না হলে ডিসপ্লেতে দেখিয়ে বলুন" },
+        { instruction: "Tap your card or pay cash",                                rohingya_text: "কার্ড ট্যাপ করুন বা নগদ দিন" },
+        { instruction: "Wait near the counter — your name or number will be called", rohingya_text: "কাউন্টারের কাছে অপেক্ষা করুন — নাম বা নম্বর ডাকা হবে" },
+      ],
+      bakery: [
+        { instruction: "Walk in and browse — no pressure to buy",                  rohingya_text: "ঢুকুন এবং দেখুন — কিনতে বাধ্য নন" },
+        { instruction: "Pick the items you want",                                  rohingya_text: "পছন্দের জিনিস বেছে নিন" },
+        { instruction: "Bring to the counter and pay",                             rohingya_text: "কাউন্টারে নিয়ে টাকা দিন" },
+      ],
+      pharmacy: [
+        { instruction: "Walk in — no appointment needed for advice",               rohingya_text: "ঢুকুন — পরামর্শের জন্য অ্যাপয়েন্টমেন্ট লাগে না" },
+        { instruction: "The pharmacist in the back can answer health questions for free", rohingya_text: "পেছনের ফার্মাসিস্ট বিনামূল্যে স্বাস্থ্য পরামর্শ দেবেন" },
+        { instruction: "Show your doctor's prescription if you have one",          rohingya_text: "ডাক্তারের প্রেসক্রিপশন থাকলে দেখান" },
+        { instruction: "Show your health card — some medicine may be covered free", rohingya_text: "হেলথ কার্ড দেখান — কিছু ওষুধ বিনামূল্যে পাওয়া যায়" },
+        { instruction: "Pay at the front cashier for any remaining cost",          rohingya_text: "বাকি টাকা সামনের ক্যাশিয়ারে দিন" },
+      ],
+      hospital: [
+        { instruction: "Walk into Emergency — it is open 24 hours, always",        rohingya_text: "ইমার্জেন্সিতে যান — এটা ২৪ ঘণ্টা খোলা থাকে" },
+        { instruction: "Show your health card (OHIP or provincial card)",          rohingya_text: "আপনার হেলথ কার্ড (ওএইচআইপি) দেখান" },
+        { instruction: "No health card yet? Say: 'I am a newcomer' — they will help you", rohingya_text: "কার্ড না থাকলে বলুন: 'আমি নতুন এসেছি' — তারা সাহায্য করবে" },
+        { instruction: "Ask for an interpreter — hospitals must provide one free", rohingya_text: "দোভাষী চাইতে পারেন — হাসপাতাল বিনামূল্যে দিতে বাধ্য" },
+        { instruction: "Healthcare here is free with your card — you will not be turned away", rohingya_text: "কার্ড থাকলে চিকিৎসা বিনামূল্যে — কাউকে ফেরানো হয় না" },
+        { instruction: "Wait in the waiting area until your name is called",       rohingya_text: "অপেক্ষা কক্ষে বসুন — নাম ডাকা পর্যন্ত" },
+      ],
+      doctor: [
+        { instruction: "Walk-in clinics need no appointment — just walk in",       rohingya_text: "ওয়াক-ইন ক্লিনিকে অ্যাপয়েন্টমেন্ট লাগে না — সরাসরি যান" },
+        { instruction: "Sign your name at the front desk",                         rohingya_text: "সামনের ডেস্কে আপনার নাম লিখুন" },
+        { instruction: "Show your health card — or say you are a newcomer",        rohingya_text: "হেলথ কার্ড দেখান — বা বলুন আপনি নতুন এসেছেন" },
+        { instruction: "Wait in the waiting room — it may take 30–60 minutes",    rohingya_text: "অপেক্ষা করুন — ৩০–৬০ মিনিট লাগতে পারে" },
+        { instruction: "When called, go in and explain your problem clearly",      rohingya_text: "ডাক পেলে ভেতরে যান এবং সমস্যা স্পষ্টভাবে বলুন" },
+      ],
+    };
+
+    const insideSteps = INSIDE_STEPS[rawType] || INSIDE_STEPS["grocery_or_supermarket"];
+    const store_steps = insideSteps.map((s, i) => ({
+      step:          i + 1,
+      instruction:   s.instruction,
+      rohingya_text: s.rohingya_text,
+      audio:         `/public/audio/store_step${i + 1}.mp3`,
+    }));
 
     // Image Logic:
     // Try Google Places Photo, otherwise use a generic Grocery Store placeholder image

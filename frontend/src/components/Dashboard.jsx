@@ -62,6 +62,7 @@ export default function Dashboard({ onFood, onDoctor, onCustom }) {
           className="mt-1 w-full flex items-center gap-4 rounded-3xl px-5 py-5 active:scale-95 transition-transform"
           style={{
             background: "linear-gradient(135deg, #6366F115, #8B5CF615)",
+            margin: "1rem 0",
             border: "2.5px solid #8B5CF644",
             boxShadow: "0 4px 20px #6366F11E",
           }}

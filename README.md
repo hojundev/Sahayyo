@@ -1,134 +1,156 @@
-# 🍚 Rohingya Grocery Guide
+# Sahayyo · সাহায্য
 
-A visual + audio step-by-step app guiding Rohingya refugees to the nearest grocery store.
+**A visual navigation & language guide for Rohingya refugees in Canada**
+
+Sahayyo (meaning *help* in Rohingya) is a mobile-first web app that guides Rohingya newcomers through everyday tasks — finding a grocery store, visiting a pharmacy, sending money, and more. Every instruction is delivered through large emojis, native-language audio, and a step-by-step visual flow designed for low-literacy users.
+
+---
+
+## How It Works
+
+1. **Home screen** — tap a category (Food, Doctor, etc.) or use **Ask AI** to describe any need in your own words
+2. **Venue picker** — choose what kind of place you're looking for (grocery, restaurant, pharmacy…)
+3. **AI custom flow** *(Ask AI only)* — Gemini generates 2–4 culturally-aware options; tap one to continue
+4. **Recommend screen** — the nearest matching place is shown with distance, duration, and a photo; switch between walking and transit
+5. **Step-by-step guidance** — turn-by-turn walking route, then in-store instructions; each step has:
+   - Emoji icons matched to the instruction
+   - Bengali/Rohingya text as the primary heading
+   - English subtitle for helpers or support workers
+   - Audio playback — tap to hear the instruction read aloud (translated + AI-generated speech)
 
 ---
 
 ## Project Structure
 
 ```
-rohingya-grocery/
-├── backend/                  ← Node.js + Express API
-│   ├── server.js
-│   ├── .env                  ← Add your Google Maps key here
+Team-404/
+├── backend/
+│   ├── server.js             ← Express API (routes, AI calls, TTS)
+│   ├── .env                  ← API keys (see setup below)
 │   └── public/
-│       ├── images/           ← Placeholder step images (PNG)
-│       └── audio/            ← Placeholder audio files (MP3)
+│       ├── images/           ← Step illustration placeholders
+│       └── audio/            ← Audio placeholders
 │
-├── frontend/                 ← React + Vite + Tailwind
+├── frontend/
 │   └── src/
+│       ├── App.jsx                     ← Main router & screen state machine
 │       ├── components/
-│       │   ├── Dashboard.jsx
-│       │   ├── StepFlow.jsx
-│       │   ├── StepCard.jsx
-│       │   ├── Avatar.jsx
-│       │   └── StatusScreen.jsx
+│       │   ├── Dashboard.jsx           ← Home screen (6 categories + Ask AI)
+│       │   ├── VenuePicker.jsx         ← Food/health sub-category selector
+│       │   ├── CustomInputScreen.jsx   ← Free-form AI query input
+│       │   ├── CustomOptionsPicker.jsx ← Displays AI-generated options
+│       │   ├── RecommendScreen.jsx     ← Place card + mode toggle
+│       │   ├── StepFlow.jsx            ← Step walker (route + store phases)
+│       │   ├── StepCard.jsx            ← Individual step (icons + TTS button)
+│       │   ├── ModePicker.jsx          ← Walking vs transit choice
+│       │   ├── StatusScreen.jsx        ← Locating / loading / error states
+│       │   └── Avatar.jsx              ← Animated waveform avatar
 │       └── hooks/
-│           ├── useGrocery.js
-│           └── useAudio.js
+│           ├── useGrocery.js   ← Geolocation + API fetch logic
+│           └── useAudio.js     ← Howler.js audio player
 │
 └── README.md
 ```
 
 ---
 
-## Quick Start (3 steps)
+## Quick Start
 
-### 1. Add your Google Maps API key
+### 1. Add API keys
 
-Edit `backend/.env`:
+Create `backend/.env`:
 
 ```
-XAI_API_KEY=YOUR_KEY_HERE
-GOOGLE_MAPS_API_KEY=YOUR_KEY_HERE
+GOOGLE_MAPS_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
 PORT=3001
-GEMINI_API_KEY=YOUR_KEY_HERE
-OPENAI_API_KEY=YOUR_KEY_HERE
 ```
 
-> **Don't have a key?** The app runs in **demo mode** automatically —  
-> it returns fake directions so you can test everything without an API key.
+| Key | Used for | Free tier |
+|-----|----------|-----------|
+| `GOOGLE_MAPS_API_KEY` | Places API + Directions API + Photos | $200 credit/month |
+| `GEMINI_API_KEY` | Custom scenario generation (Gemini 2.5 Flash) | Free tier available |
+| `OPENAI_API_KEY` | Bengali/Rohingya translation + TTS audio | Pay-per-use |
 
-To get a free key:
-1. Go to https://console.cloud.google.com
-2. Enable **Places API** and **Directions API**
-3. Create an API key → paste it above
+> **No keys?** The app falls back to **demo mode** — fake directions are returned so you can test the full UI without any API calls.
+
+**Getting a Google Maps key:**
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Enable **Places API**, **Directions API**, and **Maps JavaScript API**
+3. Create a key → paste it above
+
+**Getting a Gemini key:**
+1. Go to [aistudio.google.com](https://aistudio.google.com)
+2. Create an API key → paste it above
+
+**Getting an OpenAI key:**
+1. Go to [platform.openai.com](https://platform.openai.com)
+2. Create an API key → paste it above
 
 ---
 
 ### 2. Install dependencies
 
 ```bash
-# From project root
-cd backend  && npm install
+cd backend && npm install
 cd ../frontend && npm install
-```
-
-Or from root (if concurrently is installed):
-```bash
-npm install && npm run install:all
 ```
 
 ---
 
 ### 3. Run both servers
 
-**Terminal 1 — Backend:**
 ```bash
+# Terminal 1 — Backend
 cd backend
-node server.js
+npm run dev
 # ✅ Backend running → http://localhost:3001
-```
 
-**Terminal 2 — Frontend:**
-```bash
+# Terminal 2 — Frontend
 cd frontend
 npm run dev
 # ✅ Frontend running → http://localhost:5173
 ```
 
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:5173** in your browser (or on your phone via your local network IP).
 
 ---
 
-## How It Works
+## API Endpoints
 
-1. User taps **🍚 Grocery** on the dashboard
-2. Browser requests GPS location (falls back to Toronto if denied)
-3. Frontend calls `GET /api/nearest-grocery?lat=X&lng=Y`
-4. Backend queries Google Maps Places API → finds nearest grocery store
-5. Backend queries Google Maps Directions API → gets walking turn-by-turn steps
-6. Frontend renders each step with:
-   - **Image** (from `backend/public/images/`)
-   - **Rohingya text** + English subtitle
-   - **Avatar** that animates when audio plays
-   - **Audio button** (plays from `backend/public/audio/`)
-7. User taps **Next** to advance through walk steps, then store steps
+### `POST /api/find-place`
 
----
+Main endpoint. Finds the nearest matching place and returns a full guided route.
 
-## API Endpoint
-
-```
-GET /api/nearest-grocery?lat=43.6532&lng=-79.3832
+**Body:**
+```json
+{
+  "lat": 43.6532,
+  "lng": -79.3832,
+  "type": "grocery_or_supermarket",
+  "mode": "walking",
+  "searchQuery": "grocery store near me",
+  "customSteps": []
+}
 ```
 
 **Response:**
 ```json
 {
-  "store_name": "Metro Grocery",
-  "store_address": "456 Queen St W",
-  "store_lat": 43.649,
-  "store_lng": -79.381,
+  "store_name": "Metro",
+  "store_address": "456 Queen St W, Toronto",
+  "mode": "walking",
+  "total_distance": "850 m",
+  "total_duration": "11 mins",
+  "store_image": "https://...",
   "route": [
     {
       "step": 1,
-      "instruction": "Walk north on Yonge St (120m)",
+      "instruction": "Head north on Yonge St",
       "rohingya_text": "উত্তর দিকে হাঁটুন",
       "distance": "120 m",
-      "duration": "2 mins",
-      "image": "/public/images/walk_straight.png",
-      "audio": "/public/audio/route_step1.mp3"
+      "duration": "2 mins"
     }
   ],
   "store_steps": [
@@ -136,8 +158,7 @@ GET /api/nearest-grocery?lat=43.6532&lng=-79.3832
       "step": 1,
       "instruction": "Enter through the front door",
       "rohingya_text": "দোকানে ঢুকুন",
-      "image": "/public/images/store_enter.png",
-      "audio": "/public/audio/store_step1.mp3"
+      "icons": ["door", "enter"]
     }
   ]
 }
@@ -145,58 +166,118 @@ GET /api/nearest-grocery?lat=43.6532&lng=-79.3832
 
 ---
 
-## Replacing Placeholder Audio
+### `POST /api/custom/generate`
 
-Drop real Rohingya MP3 files into `backend/public/audio/`:
+Generates culturally-aware place options from a free-form user description. Powered by Gemini 2.5 Flash.
 
-| File              | Plays when…                        |
-|-------------------|------------------------------------|
-| `route_step1.mp3` | First walking direction             |
-| `route_step2.mp3` | Second walking direction            |
-| `store_step1.mp3` | "Enter the store"                  |
-| `store_step2.mp3` | "Take a basket"                    |
-| `store_step3.mp3` | "Pick your items"                  |
-| `store_step4.mp3` | "Go to cashier"                    |
-| `store_step5.mp3` | "Pay and collect bags"             |
+**Body:**
+```json
+{ "description": "I need to send money to my family" }
+```
 
-Audio is played via **Howler.js** — any browser-supported format works (MP3, OGG, WAV).
-
----
-
-## Replacing Placeholder Images
-
-Drop real images into `backend/public/images/`:
-
-| File                 | Used for              |
-|----------------------|-----------------------|
-| `walk_straight.png`  | Go straight step      |
-| `turn_right.png`     | Turn right step       |
-| `turn_left.png`      | Turn left step        |
-| `arrive.png`         | Arrival step          |
-| `store_enter.png`    | Enter store           |
-| `store_basket.png`   | Take basket           |
-| `store_pick.png`     | Pick items            |
-| `store_cashier.png`  | Go to cashier         |
-| `store_pay.png`      | Pay                   |
-
-Recommended size: **800×600px**, clear and simple for low-literacy users.
+**Response:**
+```json
+{
+  "options": [
+    {
+      "label": "টাকা পাঠান",
+      "labelEn": "Send Money",
+      "emoji": "💸",
+      "color": "#10B981",
+      "placeType": "bank",
+      "searchQuery": "Western Union or money transfer near me",
+      "insideSteps": [
+        {
+          "instruction": "Tell the cashier: I want to send money",
+          "rohingya_text": "ক্যাশিয়ারকে বলুন: আমি টাকা পাঠাতে চাই",
+          "icons": ["money", "person"]
+        }
+      ]
+    }
+  ]
+}
+```
 
 ---
 
-## Adding New Task Categories
+### `POST /api/tts`
 
-Edit `backend/server.js` → add new steps to `store_steps` array.  
-Edit `frontend/src/components/Dashboard.jsx` → add new category button.  
-No other code changes needed.
+Translates an English instruction to Bengali/Rohingya and returns an audio file.
+
+**Body:**
+```json
+{ "text": "Walk north on Yonge St toward Dundas St" }
+```
+
+**Response:** `audio/mpeg` blob (plays directly in the browser)
 
 ---
 
 ## Tech Stack
 
-| Layer    | Tech                                      |
-|----------|-------------------------------------------|
-| Frontend | React 18, Vite, Tailwind CSS, Howler.js   |
-| Backend  | Node.js, Express, Axios                   |
-| Maps     | Google Maps Places API + Directions API   |
-| Audio    | Howler.js (HTML5 Audio + Web Audio API)   |
-| Images   | Static files served by Express            |
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | Node.js, Express |
+| Navigation | Google Maps Places API + Directions API |
+| AI (scenarios) | Google Gemini 2.5 Flash |
+| AI (translation) | OpenAI GPT-4o-mini |
+| AI (audio) | OpenAI TTS (`tts-1`, shimmer voice) |
+| Icons | Iconify Fluent Emoji API |
+| Audio playback | Howler.js |
+
+---
+
+## Supported Task Categories
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| 🥬 Grocery / Supermarket | ✅ Full | Walking route + in-store steps |
+| 🍽️ Restaurant | ✅ Full | Includes tipping + menu guidance |
+| ☕ Café | ✅ Full | Counter ordering flow |
+| 🍞 Bakery | ✅ Full | Browse at your own pace |
+| 🏪 Convenience Store | ✅ Full | Higher prices warning included |
+| 💊 Pharmacy | ✅ Full | Health card + no appointment needed |
+| 🏥 Hospital / Emergency | ✅ Full | 24hr, interpreter rights, health card |
+| 🩺 Doctor / Walk-in Clinic | ✅ Full | Sign-in process, wait time |
+| ❓ Ask AI (anything) | ✅ Full | Gemini generates options for any request |
+| 🚌 Bus | 🔜 Coming soon | |
+| 🏫 School | 🔜 Coming soon | |
+
+---
+
+## Roadmap
+
+**Next steps**
+- Record real Rohingya audio with native speakers from the local community
+- Add Bus and School task flows
+- PWA manifest — install to home screen with no app store needed
+
+**Short term (3–6 months)**
+- Partner with a local settlement agency for community testing
+- Add Pashto, Dari, Tigrinya — same architecture, new JSON + audio files
+- Offline mode — cache routes and audio for areas with poor connectivity
+
+**Long term**
+- Android APK distributed via WhatsApp / direct link
+- Volunteer translator portal — community members contribute audio recordings
+
+---
+
+## Estimated Cost (live deployment)
+
+| Service | Free Tier | Production |
+|---------|-----------|------------|
+| Google Maps API | $200 credit/month | ~$0.005 per route |
+| Gemini (scenarios) | Free tier | Negligible |
+| OpenAI (TTS + translation) | Pay-per-use | ~$0.01 per audio request |
+| Netlify (frontend) | 100 GB/month free | Free at this scale |
+| Railway (backend) | 500 hrs/month free | ~$5/month always-on |
+
+**Estimated total: under $10 CAD/month for a live community deployment.**
+
+---
+
+*Every refugee deserves to navigate their new home with dignity, confidence, and independence.*
+
+**Sahayyo · সাহায্য · Help**

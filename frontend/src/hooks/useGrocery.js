@@ -15,7 +15,7 @@ export function useGrocery() {
   const _fetch = useCallback(async ({ lat, lng, placeType, mode }) => {
     setState(s => ({ ...s, status: "loading" }));
     try {
-      const url = `${API}/api/nearest-grocery?lat=${lat}&lng=${lng}&type=${placeType}${mode ? `&mode=${mode}` : ""}`;
+      const url = `${API}/api/find-place?lat=${lat}&lng=${lng}&type=${placeType}${mode ? `&mode=${mode}` : ""}`;
       const res  = await fetch(url);
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();

@@ -43,6 +43,61 @@ function toMetres(distText = "") {
   return distText.includes("km") ? n * 1000 : n;
 }
 
+/* Pick the most reliable result from a Places API list.
+   Prefers places that actually have the requested type in their types array,
+   then ranks by a combination of rating and review count.
+   Falls back to the nearest result if nothing scores well. */
+function pickBestPlace(results, requestedType, userLat, userLng) {
+  const TYPE_FAMILIES = {
+    hospital:               ["hospital", "health"],
+    doctor:                 ["doctor", "health", "physiotherapist", "dentist"],
+    pharmacy:               ["pharmacy", "drugstore"],
+    grocery_or_supermarket: ["grocery_or_supermarket", "supermarket", "food"],
+    restaurant:             ["restaurant", "food", "meal_takeaway", "meal_delivery"],
+    cafe:                   ["cafe", "bakery", "food"],
+    bakery:                 ["bakery", "food"],
+    convenience_store:      ["convenience_store", "grocery_or_supermarket", "supermarket"],
+  };
+
+  const validTypes = new Set(TYPE_FAMILIES[requestedType] || [requestedType]);
+
+  function distKm(place) {
+    if (!userLat || !userLng) return 0;
+    const loc = place.geometry?.location;
+    if (!loc) return 0;
+    const dLat = (loc.lat - userLat) * Math.PI / 180;
+    const dLng = (loc.lng - userLng) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(userLat*Math.PI/180) * Math.cos(loc.lat*Math.PI/180) * Math.sin(dLng/2)**2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // For hospitals: strongly prefer names that say "hospital", penalise small clinics
+  const HOSPITAL_NAME_BOOST  = /\bhospital\b/i;
+  const CLINIC_NAME_PENALTY  = /\b(clinic|centre|center|medical office|family practice|walk.?in|specialist|associates|physiotherapy|chiropractic|dental|optom|speech|foot|orthot)\b/i;
+
+  function nameScore(place) {
+    if (requestedType !== "hospital") return 0;
+    const name = place.name || "";
+    if (HOSPITAL_NAME_BOOST.test(name))  return 500;
+    if (CLINIC_NAME_PENALTY.test(name))  return -300;
+    return 0;
+  }
+
+  function score(place) {
+    const hasType     = place.types?.some(t => validTypes.has(t)) ? 1 : 0;
+    const rating      = place.rating || 0;
+    const reviews     = place.user_ratings_total || 0;
+    const distPenalty = distKm(place);
+    return hasType * 1000 + nameScore(place) + reviews * 0.05 + rating * 10 - distPenalty * 2;
+  }
+
+  const sorted = [...results].sort((a, b) => score(b) - score(a));
+  if (sorted[0].types?.some(t => validTypes.has(t))) return sorted[0];
+
+  console.warn(`⚠  No strong type match for "${requestedType}" — using nearest result`);
+  return results[0];
+}
+
 function buildSteps(steps) {
   const MIN_STEP_METRES = 30;
 
@@ -127,7 +182,7 @@ function buildFallbackResponse(lat, lng) {
 }
 
 /* ── main endpoint ── */
-app.get("/api/nearest-grocery", async (req, res) => {
+app.get("/api/find-place", async (req, res) => {
   const TYPE_MAP = { doctor: "doctor", hospital: "hospital", pharmacy: "pharmacy" };
   const rawType = req.query.type || "grocery_or_supermarket";
   const { lat, lng, mode: modeOverride } = req.query;
@@ -139,16 +194,31 @@ app.get("/api/nearest-grocery", async (req, res) => {
   }
 
   try {
-    /* 1. find nearest place */
-    const placesRes = await axios.get("https://maps.googleapis.com/maps/api/place/nearbysearch/json", {
-      params: { location: `${lat},${lng}`, rankby: "distance", type, key: GMAPS_KEY }
-    });
+    /* 1. find nearby places and pick the most reliable one.
+          For health types, Google's nearbysearch tags every small clinic as
+          "hospital", so we use Text Search which returns proper institutions. */
+    const HEALTH_TYPES = new Set(["hospital", "doctor", "pharmacy"]);
+    let candidates;
 
-    if (!placesRes.data.results?.length) {
+    if (HEALTH_TYPES.has(type)) {
+      const QUERY_LABEL  = { hospital: "hospital", doctor: "doctor clinic", pharmacy: "pharmacy" };
+      const SEARCH_RADIUS = { hospital: 20000, doctor: 10000, pharmacy: 5000 };
+      const textRes = await axios.get("https://maps.googleapis.com/maps/api/place/textsearch/json", {
+        params: { query: QUERY_LABEL[type], location: `${lat},${lng}`, radius: SEARCH_RADIUS[type] ?? 10000, key: GMAPS_KEY }
+      });
+      candidates = textRes.data.results?.slice(0, 20) || [];
+    } else {
+      const nearbyRes = await axios.get("https://maps.googleapis.com/maps/api/place/nearbysearch/json", {
+        params: { location: `${lat},${lng}`, rankby: "distance", type, key: GMAPS_KEY }
+      });
+      candidates = nearbyRes.data.results?.slice(0, 10) || [];
+    }
+
+    if (!candidates.length) {
       return res.json(buildFallbackResponse(parseFloat(lat), parseFloat(lng)));
     }
 
-    const store = placesRes.data.results[0];
+    const store = pickBestPlace(candidates, type, parseFloat(lat), parseFloat(lng));
     const storeLat = store.geometry.location.lat;
     const storeLng = store.geometry.location.lng;
     const dest = `${storeLat},${storeLng}`;

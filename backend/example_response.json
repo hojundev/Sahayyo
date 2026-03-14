@@ -1,0 +1,31 @@
+{
+    // example response from backend logic
+    "totalDuration": "22 mins",
+    "totalDistance": "4.5 km",
+    "steps": [
+      {
+        "id": 0,
+        "type": "WALKING",
+        "distance": "350 m",
+        "duration": "4 mins",
+        "instruction": "Walk to University / Phillip"
+      },
+      {
+        "id": 1,
+        "type": "TRANSIT",
+        "vehicle": "BUS",
+        "lineNumber": "201",
+        "departureStop": "University / Phillip",
+        "arrivalStop": "Conestoga Station",
+        "numStops": 6,
+        "duration": "15 mins"
+      },
+      {
+        "id": 2,
+        "type": "WALKING",
+        "distance": "200 m",
+        "duration": "3 mins",
+        "instruction": "Walk to Conestoga Mall"
+      }
+    ]
+  }

@@ -39,6 +39,7 @@ rohingya-grocery/
 Edit `backend/.env`:
 
 ```
+XAI_API_KEY=YOUR_KEY_HERE
 GOOGLE_MAPS_API_KEY=YOUR_KEY_HERE
 PORT=3001
 ```

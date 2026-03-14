@@ -14,6 +14,7 @@ export default function App() {
   const [accentColor, setAccentColor] = useState("#FF8C42");
 
   const handleReset = () => { reset(); setScreen("home"); };
+  const handleBackToVenue = () => { reset(); setScreen("venue"); };
 
   const openVenuePicker = ({ venues, color }) => {
     setVenueList(venues);
@@ -22,14 +23,14 @@ export default function App() {
   };
 
   if (status === "locating" || status === "loading" || status === "error")
-    return <StatusScreen status={status} error={error} onRetry={() => setScreen("venue")} />;
+    return <StatusScreen status={status} error={error} onRetry={() => setScreen("venue")} onBack={handleBackToVenue} />;
 
   if (status === "ready" && data && screen !== "stepping")
     return (
       <RecommendScreen
         data={data}
         onConfirm={() => setScreen("stepping")}
-        onBack={handleReset}
+        onBack={handleBackToVenue}
         onSwitchMode={switchMode}
         switching={false}
       />
@@ -40,7 +41,7 @@ export default function App() {
       <RecommendScreen
         data={data}
         onConfirm={() => {}}
-        onBack={handleReset}
+        onBack={handleBackToVenue}
         onSwitchMode={() => {}}
         switching={true}
       />

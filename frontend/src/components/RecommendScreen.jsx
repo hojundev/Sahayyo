@@ -16,6 +16,7 @@ export default function RecommendScreen({ data, onConfirm, onBack, onSwitchMode,
         <button
           onClick={onBack}
           className="bg-white/25 rounded-xl px-3.5 py-2 text-white text-lg font-black border-none mb-4"
+          style={{ position: "relative", zIndex: 10 }}
         >
           ←
         </button>

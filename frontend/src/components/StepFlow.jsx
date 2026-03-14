@@ -55,10 +55,10 @@ export default function StepFlow({ data, onReset }) {
             <img 
               src={data.store_image} 
               alt={data.store_name} 
-              className="w-full h-40 object-cover opacity-90"
+              className="w-full h-64 object-contain bg-black/20 opacity-90"
             />
           ) : (
-            <div className="w-full h-40 bg-black/20 flex items-center justify-center">
+            <div className="w-full h-64 bg-black/20 flex items-center justify-center">
               <span className="text-3xl">🏪</span>
             </div>
           )}

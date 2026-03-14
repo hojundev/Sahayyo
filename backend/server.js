@@ -204,7 +204,10 @@ app.get("/api/nearest-grocery", async (req, res) => {
       { step: 5, instruction: "Pay and collect your bags", rohingya_text: "টাকা দিয়ে ব্যাগ নিন", image: "/public/images/store_pay.png", audio: "/public/audio/store_step5.mp3" },
     ];
 
-    let storeImage = "/public/images/demo_store.png";
+    // Image Logic:
+    // Try Google Places Photo, otherwise use a generic Grocery Store placeholder image
+    let storeImage = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80"; // A nice grocery aisle fallback
+
     if (store.photos && store.photos.length > 0) {
       const photoRef = store.photos[0].photo_reference;
       storeImage = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${GMAPS_KEY}`;

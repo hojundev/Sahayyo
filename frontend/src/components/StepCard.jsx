@@ -1,5 +1,6 @@
 import Avatar from "./Avatar";
 import { useAudio } from "../hooks/useAudio";
+import { useState } from "react";
 
 // Iconify CDN — fluent-emoji set (Microsoft illustrated emoji, free, no key)
 const ICON = (name) => `https://api.iconify.design/fluent-emoji/${name}.svg`;
@@ -171,7 +172,41 @@ function IconDisplay({ icons, color }) {
 }
 
 export default function StepCard({ step, index, color, total }) {
-  const { playing, toggle } = useAudio(step.audio);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  // const { playing, toggle } = useAudio(audioUrl);
+
+  const handleSpeak = async () => {
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
+
+    try {
+      // We call our backend at port 3001
+      const res = await fetch(`http://localhost:3001/api/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: step.instruction }) // Sending 'text' in the body
+      });
+
+      if (!res.ok) throw new Error("Backend failed");
+
+      // OpenAI TTS returns an audio blob, not JSON
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const audio = new Audio(url);
+      audio.onplay = () => setPlaying(true);
+      audio.onended = () => setPlaying(false);
+      audio.play();
+
+    } catch (err) {
+      console.error("Speech Error:", err);
+    }
+  };
+
   // AI-generated steps carry their own icons; hardcoded steps use keyword matching
   const icons = step.icons?.length
     ? step.icons.map(name => ICON(name))
@@ -205,7 +240,7 @@ export default function StepCard({ step, index, color, total }) {
 
       {/* ── audio ── */}
       <div
-        onClick={toggle}
+        onClick={handleSpeak}
         className="flex items-center gap-4 rounded-2xl p-4 cursor-pointer transition-all"
         style={{
           background: playing ? `${color}10` : "white",

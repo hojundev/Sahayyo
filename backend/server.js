@@ -439,4 +439,68 @@ CRITICAL rules for insideSteps:
   }
 });
 
+app.post("/api/tts", async (req, res) => {
+  const { text } = req.body;
+  console.log("Processing speech for:", text);
+
+  if (!process.env.OPENAI_API_KEY) {
+    console.error("❌ ERROR: OPENAI_API_KEY is missing from .env");
+    return res.status(500).json({ error: "API Key missing" });
+  }
+
+  try {
+    // 1. Translation
+    const translationRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', // mini is faster and cheaper for translations
+        messages: [{
+          role: 'system',
+          content: `Translate to Chittagonian/Rohingya dialect in Bengali script. Short instructions only.`
+        }, { role: 'user', content: text }],
+      }),
+    });
+
+    const transData = await translationRes.json();
+    if (transData.error) throw new Error(transData.error.message);
+    
+    const translatedText = transData.choices[0].message.content.trim();
+    console.log("✅ Translated to:", translatedText);
+
+    // 2. TTS
+    const ttsRes = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "tts-1",
+        voice: "shimmer",
+        input: translatedText,
+      }),
+    });
+
+    if (!ttsRes.ok) {
+        const ttsError = await ttsRes.json();
+        throw new Error(ttsError.error.message);
+    }
+
+    const arrayBuffer = await ttsRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    console.log("🎵 Audio generated, sending to frontend...");
+    res.set("Content-Type", "audio/mpeg");
+    res.send(buffer);
+
+  } catch (err) {
+    console.error("💥 BACKEND CRASH:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`✅  Backend running → http://localhost:${PORT}`));

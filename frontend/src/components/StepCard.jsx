@@ -174,15 +174,19 @@ function IconDisplay({ icons, color }) {
 export default function StepCard({ step, index, color, total }) {
   const [audioUrl, setAudioUrl] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
   // const { playing, toggle } = useAudio(audioUrl);
 
   const handleSpeak = async () => {
+    if (loading) return;
+
     if (playing) {
       window.speechSynthesis.cancel();
       setPlaying(false);
       return;
     }
 
+    setLoading(true);
     try {
       // We call our backend at port 3001
       const res = await fetch(`http://localhost:3001/api/tts`, {
@@ -196,7 +200,7 @@ export default function StepCard({ step, index, color, total }) {
       // OpenAI TTS returns an audio blob, not JSON
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      
+
       const audio = new Audio(url);
       audio.onplay = () => setPlaying(true);
       audio.onended = () => setPlaying(false);
@@ -204,6 +208,8 @@ export default function StepCard({ step, index, color, total }) {
 
     } catch (err) {
       console.error("Speech Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -241,7 +247,7 @@ export default function StepCard({ step, index, color, total }) {
       {/* ── audio ── */}
       <div
         onClick={handleSpeak}
-        className="flex items-center gap-4 rounded-2xl p-4 cursor-pointer transition-all"
+        className={`flex items-center gap-4 rounded-2xl p-4 transition-all ${loading ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
         style={{
           background: playing ? `${color}10` : "white",
           border: `2px solid ${playing ? color : "#F3F4F6"}`,
@@ -253,12 +259,12 @@ export default function StepCard({ step, index, color, total }) {
           <div className="flex items-center gap-2">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-              style={{ background: playing ? color : "#F3F4F6" }}
+              style={{ background: playing || loading ? color : "#F3F4F6" }}
             >
-              {playing ? "⏸" : "▶️"}
+              {loading ? "⏳" : playing ? "⏸" : "▶️"}
             </div>
-            <span className="text-xs font-bold" style={{ color: playing ? color : "#9CA3AF" }}>
-              {playing ? "শুনছেন… Playing…" : "শুনতে চাপুন · Tap to hear"}
+            <span className="text-xs font-bold" style={{ color: playing || loading ? color : "#9CA3AF" }}>
+              {loading ? "অপেক্ষা করুন… Loading…" : playing ? "শুনছেন… Playing…" : "শুনতে চাপুন · Tap to hear"}
             </span>
           </div>
         </div>

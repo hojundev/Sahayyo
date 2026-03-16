@@ -14,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "public")));
 
+
 /* ── helpers ── */
 function stripHtml(str) {
   return str.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
@@ -44,6 +45,7 @@ function toMetres(distText = "") {
   const n = parseFloat(distText);
   return distText.includes("km") ? n * 1000 : n;
 }
+
 
 /* Pick the most reliable result from a Places API list.
    Prefers places that actually have the requested type in their types array,
@@ -159,6 +161,7 @@ function buildSteps(steps) {
     }));
 }
 
+
 /* ── fallback ── */
 function buildFallbackResponse(lat, lng) {
   return {
@@ -182,6 +185,7 @@ function buildFallbackResponse(lat, lng) {
     store_image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80"
   };
 }
+
 
 /* ── main endpoint ── */
 app.post("/api/find-place", async (req, res) => {
@@ -386,47 +390,50 @@ app.post("/api/find-place", async (req, res) => {
   }
 });
 
+
 /* ── AI custom scenario generator ── */
 app.post("/api/custom/generate", async (req, res) => {
   const { description } = req.body;
   if (!description?.trim()) return res.status(400).json({ error: "description required" });
 
   try {
-    const prompt = `You are a guide for Rohingya refugees who recently arrived in Canada. They have low literacy in English and Bengali. They are navigating a completely new country with unfamiliar systems, language barriers, and cultural differences (no experience with Canadian banks, health cards, tipping, government offices, or social norms).
+    const prompt = `
+      You are a guide for Rohingya refugees who recently arrived in Canada. They have low literacy in English and Bengali. They are navigating a completely new country with unfamiliar systems, language barriers, and cultural differences (no experience with Canadian banks, health cards, tipping, government offices, or social norms).
 
-The person described what they need: "${description.trim()}"
+      The person described what they need: "${description.trim()}"
 
-Generate 2–4 nearby place options that would help them. Return ONLY a JSON array, no markdown, no explanation.
+      Generate 2–4 nearby place options that would help them. Return ONLY a JSON array, no markdown, no explanation.
 
-Each item must have:
-- "label": Bengali label (2–3 words, Bangla script)
-- "labelEn": English label (2–3 words)
-- "emoji": single most relevant emoji
-- "color": one hex from: #10B981, #3B82F6, #EF4444, #F59E0B, #8B5CF6, #FF8C42, #EC4899
-- "placeType": best Google Places API type (bank, post_office, local_government_office, library, school, laundry, place_of_worship, atm, pharmacy, hospital, doctor, restaurant, cafe, hair_care, clothing_store, shopping_mall, grocery_or_supermarket)
-- "searchQuery": specific Google search query for Canada (e.g. "Western Union money transfer", "Islamic mosque", "Service Canada office", "halal grocery")
-- "insideSteps": array of 5–6 steps, each { "instruction": "...", "rohingya_text": "...", "icons": ["icon1", "icon2"] }
+      Each item must have:
+      - "label": Bengali label (2–3 words, Bangla script)
+      - "labelEn": English label (2–3 words)
+      - "emoji": single most relevant emoji
+      - "color": one hex from: #10B981, #3B82F6, #EF4444, #F59E0B, #8B5CF6, #FF8C42, #EC4899
+      - "placeType": best Google Places API type (bank, post_office, local_government_office, library, school, laundry, place_of_worship, atm, pharmacy, hospital, doctor, restaurant, cafe, hair_care, clothing_store, shopping_mall, grocery_or_supermarket)
+      - "searchQuery": specific Google search query for Canada (e.g. "Western Union money transfer", "Islamic mosque", "Service Canada office", "halal grocery")
+      - "insideSteps": array of 5–6 steps, each { "instruction": "...", "rohingya_text": "...", "icons": ["icon1", "icon2"] }
 
-CRITICAL rules for insideSteps:
-1. instruction must be MAX 8 WORDS. Short. Direct. No full sentences.
-2. Each step must have "icons": array of 1–2 icon names chosen from this exact list:
-   door, basket, shopping-cart, shopping-bags, credit-card, money-bag, money-with-wings,
-   coin, receipt, memo, pen, ticket, id-card, waving-hand, speaking-head, speech-balloon,
-   pill, stethoscope, hospital, ambulance, medical-symbol, hourglass-not-done, chair,
-   green-circle, raising-hands, ok-hand, folded-hands, smiling-face-with-open-hands,
-   fork-and-knife-with-plate, glass-of-milk, backhand-index-pointing-right,
-   magnifying-glass, books, mobile-phone, bank, mosque, globe-showing-asia-australia,
-   person-walking, bus, train, round-pushpin, right-arrow, left-arrow, up-arrow,
-   currency-exchange, label, shopping-bags, nail-polish, scissors, barber-pole,
-   briefcase, handshake, building-bank, classical-building, fire-station
-   Pick icons that visually represent the action. Use 2 icons when the step has two key concepts.
-3. Address real culture-shock moments for Rohingya newcomers:
-   - Canadian services are often FREE (healthcare, libraries, settlement services) — say so
-   - They may fear government offices or authority — reassure: "staff will help you", "you are safe"
-   - They don't know: OHIP health card, 15% tipping, self-bagging groceries, tap-to-pay
-   - Interpreter is a legal right — not optional, not extra cost
-   - They fled persecution — never make ID checks sound threatening; always pair with reassurance
-4. rohingya_text must be natural Bangla/Bengali script — conversational, not literal translation`;
+      CRITICAL rules for insideSteps:
+      1. instruction must be MAX 8 WORDS. Short. Direct. No full sentences.
+      2. Each step must have "icons": array of 1–2 icon names chosen from this exact list:
+        door, basket, shopping-cart, shopping-bags, credit-card, money-bag, money-with-wings,
+        coin, receipt, memo, pen, ticket, id-card, waving-hand, speaking-head, speech-balloon,
+        pill, stethoscope, hospital, ambulance, medical-symbol, hourglass-not-done, chair,
+        green-circle, raising-hands, ok-hand, folded-hands, smiling-face-with-open-hands,
+        fork-and-knife-with-plate, glass-of-milk, backhand-index-pointing-right,
+        magnifying-glass, books, mobile-phone, bank, mosque, globe-showing-asia-australia,
+        person-walking, bus, train, round-pushpin, right-arrow, left-arrow, up-arrow,
+        currency-exchange, label, shopping-bags, nail-polish, scissors, barber-pole,
+        briefcase, handshake, building-bank, classical-building, fire-station
+        Pick icons that visually represent the action. Use 2 icons when the step has two key concepts.
+      3. Address real culture-shock moments for Rohingya newcomers:
+        - Canadian services are often FREE (healthcare, libraries, settlement services) — say so
+        - They may fear government offices or authority — reassure: "staff will help you", "you are safe"
+        - They don't know: OHIP health card, 15% tipping, self-bagging groceries, tap-to-pay
+        - Interpreter is a legal right — not optional, not extra cost
+        - They fled persecution — never make ID checks sound threatening; always pair with reassurance
+      4. rohingya_text must be natural Bangla/Bengali script — conversational, not literal translation
+    `;
 
     const result = await gemini.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
     const raw = result.text.trim()
@@ -439,6 +446,8 @@ CRITICAL rules for insideSteps:
   }
 });
 
+
+/* ── TTS endpoint ── */
 app.post("/api/tts", async (req, res) => {
   const { text } = req.body;
   console.log("Processing speech for:", text);
@@ -449,7 +458,6 @@ app.post("/api/tts", async (req, res) => {
   }
 
   try {
-    // 1. Translation
     const translationRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -457,7 +465,7 @@ app.post("/api/tts", async (req, res) => {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // mini is faster and cheaper for translations
+        model: 'gpt-4o-mini',
         messages: [{
           role: 'system',
           content: `Translate to Chittagonian/Rohingya dialect in Bengali script. Short instructions only.`
@@ -471,7 +479,6 @@ app.post("/api/tts", async (req, res) => {
     const translatedText = transData.choices[0].message.content.trim();
     console.log("✅ Translated to:", translatedText);
 
-    // 2. TTS
     const ttsRes = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -486,8 +493,8 @@ app.post("/api/tts", async (req, res) => {
     });
 
     if (!ttsRes.ok) {
-        const ttsError = await ttsRes.json();
-        throw new Error(ttsError.error.message);
+      const ttsError = await ttsRes.json();
+      throw new Error(ttsError.error.message);
     }
 
     const arrayBuffer = await ttsRes.arrayBuffer();
@@ -502,5 +509,6 @@ app.post("/api/tts", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.listen(PORT, () => console.log(`✅  Backend running → http://localhost:${PORT}`));

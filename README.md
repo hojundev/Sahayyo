@@ -49,8 +49,6 @@ cd Sahayyo
 npm run install:all
 ```
 
----
-
 ### 2. Add API keys
 
 Create `backend/.env`:
@@ -63,8 +61,6 @@ PORT=3001
 ```
 
 > **No keys?** The app falls back to **demo mode** — fake directions are returned so you can test the full UI without any API calls.
-
----
 
 ### 3. Run both servers
 
@@ -89,8 +85,6 @@ Open **http://localhost:5173** in your browser (or on your phone via your local 
 | 🏥 Hospital / Emergency | ✅ Full | 24hr, interpreter rights, health card |
 | 🩺 Doctor / Walk-in Clinic | ✅ Full | Sign-in process, wait time |
 | ❓ Ask AI (anything) | ✅ Full | Gemini generates options for any request |
-| 🚌 Bus | 🔜 Coming soon | |
-| 🏫 School | 🔜 Coming soon | |
 
 ---
 

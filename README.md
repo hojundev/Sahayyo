@@ -1,6 +1,8 @@
-# Sahayyo · সাহায্য
+# [`Sahayyo (সাহায্য)`](https://uwaterloo.ca/artificial-intelligence-institute/events/ai-data-science-good-hackathon-winter-2026)
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat\&logo=javascript\&logoColor=black) ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
+
+### 🥈 2nd Place Winner — AI & Data Science for Good Hackathon (Winter 2026)
 
 **An oral-first guide for newcomers, using native audio and visual workflows to navigate daily life without the need for reading or writing.**
 
@@ -63,7 +65,7 @@ PORT=3001
 > **No keys?** The app falls back to **demo mode** — fake directions are returned so you can test the full UI without any API calls.
 
 ### 3. Run both servers
-
+ 
 ```bash
 npm run dev
 ```

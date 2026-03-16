@@ -4,7 +4,7 @@
 
 ### 🥈 2nd Place Winner — AI & Data Science for Good Hackathon (Winter 2026)
 
-**A visual-first guide for newcomers, using native audio and visual workflows to navigate daily life without the need for reading or writing.**
+**A visual-first guide for Rohingya refugees in Canada, using native audio and visual workflows to navigate daily life.**
 
 ---
 
